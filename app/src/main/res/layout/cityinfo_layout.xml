@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="50dp">
+
+    <TextView
+        android:id="@+id/city_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textStyle="bold"
+        android:textColor="#bb000000"
+        android:textSize="15sp"
+        android:layout_marginStart="35dp"
+        android:layout_marginEnd="20dp"
+        android:layout_centerVertical="true"/>
+
+    <TextView
+        android:id="@+id/parent_city"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="13sp"
+        android:textColor="#bb636363"
+        android:layout_centerVertical="true"
+        android:layout_toEndOf="@id/city_name"
+        android:layout_marginEnd="20dp"/>
+
+    <TextView
+        android:id="@+id/admin_city"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="13sp"
+        android:textColor="#bb636363"
+        android:layout_centerVertical="true"
+        android:layout_toEndOf="@id/parent_city"
+       />
+
+    <View android:background="#11000000"
+        android:layout_width="fill_parent"
+        android:layout_height="1.0px"
+        android:layout_marginLeft="10.0dip"
+        android:layout_marginRight="10.0dip"
+        android:layout_alignParentBottom="true" />
+
+
+</RelativeLayout>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v4.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/drawerlayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/weatherdetial"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fitsSystemWindows="true"
+        android:orientation="vertical">
+
+        <include layout="@layout/toolbar_custom" />
+
+        <!--<include layout="@layout/weather_info"/>-->
+        <android.support.v4.view.ViewPager
+            android:id="@+id/viewpager"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:overScrollMode="never">
+
+        </android.support.v4.view.ViewPager>
+
+
+        <!--<android.support.v4.widget.SwipeRefreshLayout-->
+            <!--android:id="@+id/refresh"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="wrap_content">-->
+
+            <!--<android.support.v4.widget.NestedScrollView-->
+                <!--android:id="@+id/scrollview"-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="match_parent">-->
+
+                <!--<LinearLayout-->
+                    <!--android:layout_width="match_parent"-->
+                    <!--android:layout_height="wrap_content"-->
+                    <!--android:orientation="vertical">-->
+
+                    <!--<include layout="@layout/weather_now" />-->
+
+                    <!--<include layout="@layout/weather_temperature" />-->
+
+                    <!--<include layout="@layout/hourly_forcast" />-->
+
+                    <!--<include layout="@layout/windmill_humidity" />-->
+
+                    <!--<include layout="@layout/sun_view" />-->
+
+                    <!--<include layout="@layout/weather_lifestyle" />-->
+
+                    <!--<include layout="@layout/data_provider" />-->
+
+                <!--</LinearLayout>-->
+            <!--</android.support.v4.widget.NestedScrollView>-->
+        <!--</android.support.v4.widget.SwipeRefreshLayout>-->
+    </LinearLayout>
+
+
+    <android.support.design.widget.NavigationView
+        android:id="@+id/nav_view"
+        android:layout_width="280dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:fitsSystemWindows="true"
+        app:headerLayout="@layout/nav_header"
+        app:menu="@menu/nav_menu" />
+</android.support.v4.widget.DrawerLayout>

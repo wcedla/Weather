@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="20dp">
+
+    <com.wcedla.wcedlaweather.view.TemperatureCurve
+        android:id="@+id/temperaturecurvemax"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:LineColor="#FFFFFF"
+        app:TextColor="#FFFFFF"
+        app:TmpTextSize="12dp" />
+
+    <com.wcedla.wcedlaweather.view.TemperatureCurve
+        android:id="@+id/temperaturecurvemin"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:LineColor="#FFFFFF"
+        app:TextColor="#FFFFFF"
+        app:TmpTextSize="12dp" />
+
+    <com.wcedla.wcedlaweather.view.DayLine
+        android:id="@+id/dayline"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:LineTextSize="10dp"
+        app:LineTextColor="#FFFFFF"/>
+
+    <!--<View android:background="#81ececec"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="1px" />-->
+
+</LinearLayout>

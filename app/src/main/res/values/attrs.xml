@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="SunCustomView">
+        <attr name="Radius" format="dimension" />
+        <attr name="SunTextColor" format="color" />
+        <attr name="SunTextSize" format="dimension" />
+        <attr name="SunSrc" format="reference" />
+    </declare-styleable>
+
+    <declare-styleable name="WindMill">
+        <attr name="WindmillRadius" format="dimension"/>
+        <attr name="Speed" format="float"/>
+    </declare-styleable>
+
+    <declare-styleable name="TemperatureCurve">
+        <attr name="TmpTextSize" format="dimension"/>
+        <attr name="LineColor" format="color"/>
+        <attr name="TextColor" format="color"/>
+    </declare-styleable>
+
+    <declare-styleable name="DayLine">
+        <attr name="LineTextSize" format="dimension"/>
+        <attr name="LineTextColor" format="color"/>
+    </declare-styleable>
+    <declare-styleable name="HourlyForcast">
+        <attr name="HourlyTextsize" format="dimension"/>
+
+    </declare-styleable>
+
+</resources>
