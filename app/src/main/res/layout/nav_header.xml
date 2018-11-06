@@ -16,17 +16,8 @@
         android:id="@+id/username"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:text="tonygreendev@gmail.com"
-        android:textColor="#FFF"
-        android:textSize="14sp" />
-
-    <TextView
-        android:id="@+id/mail"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@id/username"
-        android:text="Tony Green"
+        android:layout_centerInParent="true"
+        android:text="愿你的每一天，都是晴天"
         android:textColor="#FFF"
         android:textSize="14sp" />
 

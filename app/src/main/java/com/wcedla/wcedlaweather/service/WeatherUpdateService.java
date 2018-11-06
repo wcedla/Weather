@@ -168,9 +168,7 @@ public class WeatherUpdateService extends Service {
                 Notification notification = new NotificationCompat.Builder(WeatherUpdateService.this, "1")
                         .setContentTitle("wcedla")
                         .setContentText("看到这个说明你看到bug了")
-                        .setWhen(System.currentTimeMillis())
-                        .setSmallIcon(R.mipmap.ic_launcher)
-                        .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher))
+                        .setSmallIcon(R.drawable.wcedla_notification)
                         .setContentIntent(foregroundPI)
                         .setContent(remoteView)
                         .build();

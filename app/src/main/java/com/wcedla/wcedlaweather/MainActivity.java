@@ -93,6 +93,7 @@ import com.wcedla.wcedlaweather.tool.SystemTool;
 import com.wcedla.wcedlaweather.view.DayLine;
 import com.wcedla.wcedlaweather.view.HourlyForcast;
 import com.wcedla.wcedlaweather.view.SunCustomView;
+import com.wcedla.wcedlaweather.view.SwitchButton;
 import com.wcedla.wcedlaweather.view.TemperatureCurve;
 import com.wcedla.wcedlaweather.view.WindMill;
 
@@ -196,7 +197,9 @@ public class MainActivity extends AppCompatActivity {
 
         SystemTool.setNavigationBarStatusBarTranslucent(this);
         Bundle bundle = getIntent().getExtras();
-        cityname = bundle.getString("cityname");
+        if (bundle != null) {
+            cityname = bundle.getString("cityname");
+        }
         //SystemTool.isServiceRunning(this,"com.wcedla.wcedlaweather.service.WeatherUpdateService");
         intent=new Intent(this,WeatherUpdateService.class);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -298,6 +301,16 @@ public class MainActivity extends AppCompatActivity {
                     case R.id.nav_city_manage:
                         goToCityManage();
                         break;
+                    case R.id.nav_theme:
+                        break;
+                    case R.id.nav_update:
+                        break;
+                    case R.id.nav_setting:
+                        Intent intent=new Intent(MainActivity.this,WeatherSetting.class);
+                        startActivity(intent);
+                        break;
+                    case R.id.nav_about:
+                        break;
                 }
                 return true;
             }
@@ -331,6 +344,9 @@ public class MainActivity extends AppCompatActivity {
 
         Toast.makeText(this, cityname, Toast.LENGTH_SHORT).show();
 
+        SwitchButton switchButton=findViewById(R.id.switch_button);
+        switchButton.setCheck(true);
+
 
 
     }
@@ -349,10 +365,16 @@ public class MainActivity extends AppCompatActivity {
                 drawerLayout.openDrawer(GravityCompat.START);
                 break;
 
-            case R.id.backup:
+            case R.id.setting:
+                Toast.makeText(this,"点击了设置选项",Toast.LENGTH_SHORT).show();
                 break;
 
-            case R.id.settings:
+            case R.id.share:
+                Toast.makeText(this,"点击了分享选项",Toast.LENGTH_SHORT).show();
+                break;
+
+            case R.id.exit:
+                Toast.makeText(this,"点击了退出选项",Toast.LENGTH_SHORT).show();
                 break;
         }
         return true;

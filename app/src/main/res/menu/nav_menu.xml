@@ -6,20 +6,20 @@
             android:icon="@drawable/city_manage"
             android:title="城市管理" />
         <item
-            android:id="@+id/nav_friends"
-            android:icon="@drawable/nav_friends"
-            android:title="Friends" />
+            android:id="@+id/nav_theme"
+            android:icon="@drawable/ic_theme"
+            android:title="主题选择" />
         <item
-            android:id="@+id/nav_location"
-            android:icon="@drawable/nav_location"
-            android:title="Location" />
+            android:id="@+id/nav_update"
+            android:icon="@drawable/ic_update"
+            android:title="检查更新" />
         <item
-            android:id="@+id/nav_mail"
-            android:icon="@drawable/nav_mail"
-            android:title="Mail" />
+            android:id="@+id/nav_setting"
+            android:icon="@drawable/ic_settings"
+            android:title="设置" />
         <item
-            android:id="@+id/nav_task"
-            android:icon="@drawable/nav_task"
-            android:title="Tasks" />
+            android:id="@+id/nav_about"
+            android:icon="@drawable/ic_about"
+            android:title="关于" />
     </group>
 </menu>
