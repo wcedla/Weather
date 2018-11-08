@@ -344,8 +344,7 @@ public class MainActivity extends AppCompatActivity {
 
         Toast.makeText(this, cityname, Toast.LENGTH_SHORT).show();
 
-        SwitchButton switchButton=findViewById(R.id.switch_button);
-        switchButton.setCheck(true);
+
 
 
 
