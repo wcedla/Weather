@@ -32,11 +32,18 @@ public class SwitchButton extends View {
     float changeLength;
     float startPosition;
     float circleRadius;
-    boolean isSelect = true;
 
     public boolean isSelect() {
         return isSelect;
     }
+
+    public void setSelect(boolean select) {
+        isSelect = select;
+    }
+
+    boolean isSelect = true;
+
+
 
 
     public SwitchButton(Context context) {

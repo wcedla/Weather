@@ -28,6 +28,7 @@ import com.wcedla.wcedlaweather.db.WeatherHourlyTable;
 import com.wcedla.wcedlaweather.db.WeatherLifeStyleTable;
 import com.wcedla.wcedlaweather.db.WeatherNowTable;
 import com.wcedla.wcedlaweather.db.WeatherUpdateTable;
+import com.wcedla.wcedlaweather.tool.BaseActivity;
 import com.wcedla.wcedlaweather.tool.SystemTool;
 
 import org.litepal.LitePal;
@@ -35,7 +36,7 @@ import org.litepal.LitePal;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CityManage extends AppCompatActivity {
+public class CityManage extends BaseActivity {
 
     String where="";
     ListView cityManageListview;

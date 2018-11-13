@@ -243,7 +243,7 @@ public class WeatherInfo extends Fragment {
         String url = "https://free-api.heweather.com/s6/weather?key=c864606856d54eedb9f63a6cc0edd91f&location=" + Uri.encode(cityName);
         HttpTool.doHttpRequest(url, new Callback() {
             @Override
-            public void onFailure(Call call, IOException e) {
+            public void onFailure(Call call, final IOException e) {
                 myActivity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -258,6 +258,7 @@ public class WeatherInfo extends Fragment {
                 String responsedata = null;
                 if (response.body() != null) {
                     responsedata = response.body().string();
+
                 }
                 Boolean result = JsonTool.dealWeatherJson(responsedata, cityName);
                 if (result) {
@@ -292,6 +293,7 @@ public class WeatherInfo extends Fragment {
                                     mainActivity.setNotification();
                                     showWeatherInfo();
                                     swipeRefreshLayout.setRefreshing(false);
+                                    ((MainActivity) myActivity).weatherBinder.refreshAlarmManger();
                                 }
                             });
 

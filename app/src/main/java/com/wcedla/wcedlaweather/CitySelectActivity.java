@@ -17,6 +17,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.wcedla.wcedlaweather.db.CityListTable;
+import com.wcedla.wcedlaweather.tool.BaseActivity;
 import com.wcedla.wcedlaweather.tool.SystemTool;
 
 import org.litepal.LitePal;
@@ -24,7 +25,7 @@ import org.litepal.LitePal;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CitySelectActivity extends AppCompatActivity {
+public class CitySelectActivity extends BaseActivity {
 
     Boolean isSelect;
     String cityName;

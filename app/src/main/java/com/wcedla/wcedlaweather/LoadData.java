@@ -20,6 +20,7 @@ import com.wcedla.wcedlaweather.gson.AdminGson;
 import com.wcedla.wcedlaweather.gson.ChinaGson;
 import com.wcedla.wcedlaweather.gson.CityGson;
 import com.wcedla.wcedlaweather.gson.ParentGson;
+import com.wcedla.wcedlaweather.tool.BaseActivity;
 import com.wcedla.wcedlaweather.tool.HttpTool;
 import com.wcedla.wcedlaweather.tool.JsonTool;
 import com.wcedla.wcedlaweather.tool.SystemTool;
@@ -38,7 +39,7 @@ import okhttp3.Response;
 
 import static org.litepal.LitePalBase.TAG;
 
-public class LoadData extends AppCompatActivity {
+public class LoadData extends BaseActivity {
 
     ImageView upgradeimage;
     TextView upgradetext;

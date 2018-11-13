@@ -1,5 +1,6 @@
 package com.wcedla.wcedlaweather.service;
 
+import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -15,6 +16,7 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.SystemClock;
@@ -35,7 +37,12 @@ import com.wcedla.wcedlaweather.tool.SystemTool;
 import org.litepal.LitePal;
 
 import java.io.IOException;
+import java.text.ParsePosition;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -47,7 +54,9 @@ public class WeatherUpdateService extends Service {
 
     WeatherBinder weatherBinder = new WeatherBinder();//binder和maninactivity关联
 
-    Boolean isFirstRun=true;
+    Boolean isFirstRun = true;
+
+    AlarmManager alarmManager;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -59,24 +68,44 @@ public class WeatherUpdateService extends Service {
         Log.d(TAG, "更新服务启动");
         //主要是为了第一次启动服务的时候不执行更新数据操作，一是因为没有必要，二是，如果数据很久没有更新并且前台更新服务给杀掉了
         //那就会发生重复刷新的问题，即监测是不是很久没刷新会监测到，这个启动时又更新的话就冲突了。
-        if(!isFirstRun) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    updateWeather();
-                    //Log.d(TAG, "服务更新天气，开了个线程,上面有执行说明成功刷新了，没有说明没有执行");
-                }
-            }).start();
+        SharedPreferences settingXml = getSharedPreferences("weatherSetting", MODE_PRIVATE);
+        boolean needUpdateService = settingXml.getBoolean("updateWeather", true);
+        if (needUpdateService) {
+            if (!isFirstRun) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        updateWeather();
+                        //Log.d(TAG, "服务更新天气，开了个线程,上面有执行说明成功刷新了，没有说明没有执行");
+                    }
+                }).start();
+            }
+        } else {
+            return super.onStartCommand(intent, flags, startId);
         }
-        isFirstRun=false;
-
-        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);//定时器
-        int rate = 3;
-        long updateTime = SystemClock.elapsedRealtime() + rate *60*60* 1000;
-        Intent weatherIntent = new Intent(this, WeatherUpdateService.class);//重新执行一遍本段代码段
-        PendingIntent updatePI = PendingIntent.getService(this, 0, weatherIntent, 0);
-        alarmManager.cancel(updatePI);
-        alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, updateTime, updatePI);
+        isFirstRun = false;
+//        SharedPreferences sharedPreferences = getSharedPreferences("cityselect", MODE_PRIVATE);
+//        String cityName = sharedPreferences.getString("cityname", "");
+//        List<WeatherUpdateTable> weatherUpdateTableList = LitePal.where("cityName=?", cityName).find(WeatherUpdateTable.class);
+//
+//
+//        alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);//定时器
+//        //Log.d(TAG, "时间"+settingXml.getString("updateTime","3小时").charAt(0));
+//
+//        int rate = Integer.parseInt(String.valueOf(settingXml.getString("updateTime", "3小时").charAt(0)));
+//        //long updateTime = System.currentTimeMillis() + rate *60*60* 1000;
+//        //Log.d(TAG, "时间"+SystemTool.getMillsForTimeStr(weatherUpdateTableList.get(0).getUpdateTime()));
+//        long updateTime = SystemTool.getMillsForTimeStr(weatherUpdateTableList.get(0).getUpdateTime()) + rate * 60 * 60 * 1000;
+//        if (updateTime < System.currentTimeMillis()) {
+//            updateTime += 1 * 60 * 60 * 1000;
+//        }
+//        Log.d(TAG, "时间" + updateTime);
+//
+//        Intent weatherIntent = new Intent(this, WeatherUpdateService.class);//重新执行一遍本段代码段
+//        PendingIntent updatePI = PendingIntent.getService(this, 0, weatherIntent, 0);
+//        alarmManager.cancel(updatePI);
+//        alarmManager.set(AlarmManager.RTC_WAKEUP, updateTime, updatePI);
+        setAlarmManager();
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -85,7 +114,7 @@ public class WeatherUpdateService extends Service {
         final String cityName = sharedPreferences.getString("cityname", "");
         List<WeatherNowTable> weatherNowTableList = LitePal.where("cityName=?", cityName).find(WeatherNowTable.class);
         //更新是要看一下是不是已经有天气数据了
-        if(weatherNowTableList.size()>0) {
+        if (weatherNowTableList.size() > 0) {
             Log.d(TAG, "服务更新天气执行" + cityName);
             String url = "https://free-api.heweather.com/s6/weather?key=c864606856d54eedb9f63a6cc0edd91f&location=" + Uri.encode(cityName);
             HttpTool.doHttpRequest(url, new Callback() {
@@ -106,10 +135,40 @@ public class WeatherUpdateService extends Service {
         }
     }
 
+    private void setAlarmManager() {
+        SharedPreferences settingXml = getSharedPreferences("weatherSetting", MODE_PRIVATE);
+        SharedPreferences sharedPreferences = getSharedPreferences("cityselect", MODE_PRIVATE);
+        String cityName = sharedPreferences.getString("cityname", "");
+        List<WeatherUpdateTable> weatherUpdateTableList = LitePal.where("cityName=?", cityName).find(WeatherUpdateTable.class);
+        alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);//定时器
+        //Log.d(TAG, "时间"+settingXml.getString("updateTime","3小时").charAt(0));
+        int rate = Integer.parseInt(String.valueOf(settingXml.getString("updateTime", "3小时").charAt(0)));
+        //long updateTime = System.currentTimeMillis() + rate *60*60* 1000;
+        //Log.d(TAG, "时间"+SystemTool.getMillsForTimeStr(weatherUpdateTableList.get(0).getUpdateTime()));
+        long updateTime = SystemTool.getMillsForTimeStr(weatherUpdateTableList.get(0).getUpdateTime()) + rate * 60 * 60 * 1000;
+        if (updateTime < System.currentTimeMillis()) {
+            updateTime += 1 * 60 * 60 * 1000;
+        }
+        Log.d(TAG, "时间" + updateTime);
+        Intent weatherIntent = new Intent(this, WeatherUpdateService.class);//重新执行一遍本段代码段
+        PendingIntent updatePI = PendingIntent.getService(this, 0, weatherIntent, 0);
+        alarmManager.cancel(updatePI);
+        alarmManager.set(AlarmManager.RTC_WAKEUP, updateTime, updatePI);
+    }
+
     //数据绑定类
     public class WeatherBinder extends Binder {
 
         public void SetNotification() {
+            SharedPreferences settingXml = getSharedPreferences("weatherSetting", MODE_PRIVATE);
+            Boolean isShowBar = settingXml.getBoolean("notificationBar", true);//判断一下是否有选中城市
+            String barShow;
+            if (isShowBar) {
+                barShow = "wcedla_1";
+            } else {
+                barShow = "wcedla_w";
+            }
+
             SharedPreferences sharedPreferences = getSharedPreferences("cityselect", MODE_PRIVATE);
             String cityName = sharedPreferences.getString("cityname", "");
             Intent foregroundIntent = new Intent(WeatherUpdateService.this, MainActivity.class);
@@ -120,15 +179,13 @@ public class WeatherUpdateService extends Service {
             List<WeatherNowTable> weatherNowTableList = LitePal.where("cityName=?", cityName).find(WeatherNowTable.class);
             List<WeatherUpdateTable> weatherUpdateTableList = LitePal.where("cityName=?", cityName).find(WeatherUpdateTable.class);
             //如果天气表有数据就显示数据，没有数据就显示null
-            if(weatherNowTableList.size()<1||weatherUpdateTableList.size()<1)
-            {
+            if (weatherNowTableList.size() < 1 || weatherUpdateTableList.size() < 1) {
                 remoteView.setTextViewText(R.id.notification_weather, "Null");
                 remoteView.setImageViewResource(R.id.notification_weather_image, R.drawable.weather_null);
                 remoteView.setTextViewText(R.id.notification_city, cityName);
                 remoteView.setTextViewText(R.id.notification_temperature, "Null");
                 remoteView.setTextViewText(R.id.notification_updatetime, "Null");
-            }
-            else if(weatherNowTableList.size()>0&&weatherUpdateTableList.size()>0) {
+            } else if (weatherNowTableList.size() > 0 && weatherUpdateTableList.size() > 0) {
                 remoteView.setTextViewText(R.id.notification_weather, weatherNowTableList.get(0).getWeatherText());
                 remoteView.setImageViewResource(R.id.notification_weather_image, SystemTool.getResourceByReflect("weather_" + weatherNowTableList.get(0).getIconId()));
                 remoteView.setTextViewText(R.id.notification_city, cityName);
@@ -151,7 +208,7 @@ public class WeatherUpdateService extends Service {
 //                    channel.setLightColor(Color.GREEN); //小红点颜色
 //                    channel.setShowBadge(true); //是否在久按桌面图标时显示此渠道的通知
                 notificationManager.createNotificationChannel(channel);
-                Notification.Builder builder = new Notification.Builder(WeatherUpdateService.this, "wcedla_1"); //与channelId对应
+                Notification.Builder builder = new Notification.Builder(WeatherUpdateService.this, barShow); //与channelId对应
                 //icon title text必须包含，不然影响桌面图标小红点的展示
                 builder.setSmallIcon(R.drawable.wcedla_notification)
                         .setContentTitle("xxx")
@@ -172,11 +229,24 @@ public class WeatherUpdateService extends Service {
                         .setContentIntent(foregroundPI)
                         .setContent(remoteView)
                         .build();
-                startForeground(13, notification);
+                if (isShowBar)
+                    startForeground(13, notification);
+                else
+                    startForeground(0, notification);
             }
 
 
         }
 
+        public void stopNotification() {
+            stopForeground(true);
+        }
+
+        public void refreshAlarmManger() {
+            setAlarmManager();
+        }
+
+
     }
+
 }

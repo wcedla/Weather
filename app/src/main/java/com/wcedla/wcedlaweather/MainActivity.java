@@ -39,13 +39,16 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.NestedScrollView;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.transition.Visibility;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -53,8 +56,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.animation.AnimationSet;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
@@ -71,6 +76,7 @@ import com.bumptech.glide.request.target.SimpleTarget;
 import com.bumptech.glide.request.target.Target;
 import com.bumptech.glide.request.transition.Transition;
 import com.google.gson.Gson;
+import com.wcedla.wcedlaweather.adapter.ThemeGridviewAdapter;
 import com.wcedla.wcedlaweather.adapter.WeatherPagerAdapter;
 import com.wcedla.wcedlaweather.db.CityListTable;
 import com.wcedla.wcedlaweather.db.ProvinceTable;
@@ -87,11 +93,13 @@ import com.wcedla.wcedlaweather.gson.WeatherLifeStyle;
 import com.wcedla.wcedlaweather.gson.WeatherNow;
 import com.wcedla.wcedlaweather.gson.WeatherUpdate;
 import com.wcedla.wcedlaweather.service.WeatherUpdateService;
+import com.wcedla.wcedlaweather.tool.BaseActivity;
 import com.wcedla.wcedlaweather.tool.HttpTool;
 import com.wcedla.wcedlaweather.tool.JsonTool;
 import com.wcedla.wcedlaweather.tool.SystemTool;
 import com.wcedla.wcedlaweather.view.DayLine;
 import com.wcedla.wcedlaweather.view.HourlyForcast;
+import com.wcedla.wcedlaweather.view.MyPopWindow;
 import com.wcedla.wcedlaweather.view.SunCustomView;
 import com.wcedla.wcedlaweather.view.SwitchButton;
 import com.wcedla.wcedlaweather.view.TemperatureCurve;
@@ -107,6 +115,7 @@ import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -119,11 +128,10 @@ import okhttp3.Response;
 
 import static org.litepal.LitePalBase.TAG;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends BaseActivity {
 
     DrawerLayout drawerLayout;
     LinearLayout weatherDetial;
-    //SwipeRefreshLayout swipeRefreshLayout;
     NestedScrollView scrollView;
     String cityname;
     TextView tbCityName;
@@ -131,30 +139,6 @@ public class MainActivity extends AppCompatActivity {
     TextView tbWeatherText;
     ViewPager viewPager;
     WeatherPagerAdapter weatherPagerAdapter;
-//    TextView updateTimeText;
-//    TextView temperatureText;
-//    ImageView weatherIcon;
-//    TextView weatherText;
-//    TextView bodyTemperature;
-//    TextView humidity;
-//    TextView windInfo;
-//    TextView randomWeatherInfo;
-//    TextView hourlyTitleText;
-//    TextView windText;
-//    TextView windLevel;
-//    TextView humidityText;
-
-//    SunCustomView sunCustomView;
-//    WindMill windMillbig;
-//    WindMill windMillsmall;
-//    TemperatureCurve temperatureCurveMax;
-//    TemperatureCurve temperatureCurveMin;
-//    DayLine dayLine;
-//    HourlyForcast hourlyForcas;
-//    LinearLayout windView;
-//   // LinearLayout sunlayout;
-//    LinearLayout lifeStyleLayout;
-//    LinearLayout dataProvider;
     NavigationView navigationView;
 
     List<WeatherBasicTable> weatherBasicTableList;
@@ -166,12 +150,10 @@ public class MainActivity extends AppCompatActivity {
     List<Fragment> fragmentList=new ArrayList<>();
     List<CityListTable> cityListTableList;
 
-//    AnimatorSet animatorSetGo;
-//    AnimatorSet animatorSetCancel;
-//    Boolean needShow = true;
-//    Boolean sunShow = true;
-
     Intent intent;
+    DisplayMetrics displayMetrics;
+    int displayWidth,displayHeight;
+    float denisty;
 
     WeatherUpdateService.WeatherBinder weatherBinder;
 
@@ -193,18 +175,23 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        displayMetrics=getResources().getDisplayMetrics();
+        displayWidth=displayMetrics.widthPixels;
+        displayHeight=displayMetrics.heightPixels;
+        denisty=displayMetrics.density;
 
         SystemTool.setNavigationBarStatusBarTranslucent(this);
         Bundle bundle = getIntent().getExtras();
         if (bundle != null) {
             cityname = bundle.getString("cityname");
         }
-        //SystemTool.isServiceRunning(this,"com.wcedla.wcedlaweather.service.WeatherUpdateService");
+
+
         intent=new Intent(this,WeatherUpdateService.class);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if(!SystemTool.isServiceRunning(this,"com.wcedla.wcedlaweather.service.WeatherUpdateService")) {
                 startForegroundService(intent);
+
 
             }
         }
@@ -237,11 +224,7 @@ public class MainActivity extends AppCompatActivity {
         viewPager.setOffscreenPageLimit(0);
         viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
-            public void onPageScrolled(int i, float v, int i1)
-            {
-
-                //Log.d(TAG, "滑动变化a"+i+","+v+","+i1+","+viewPager.getCurrentItem());
-            }
+            public void onPageScrolled(int i, float v, int i1) {}
 
             @Override
             public void onPageSelected(int i) {
@@ -261,9 +244,6 @@ public class MainActivity extends AppCompatActivity {
 
 
                 weatherUpdateTableList=LitePal.where("cityName=?", cityListTableList.get(i).getCityName()).find(WeatherUpdateTable.class);
-//
-//                Intent intent=new Intent(MainActivity.this,WeatherUpdateService.class);
-//                startService(intent);
 
                 if(weatherNowTableList.size()>0)
                 {
@@ -276,22 +256,8 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onPageScrollStateChanged(int i) {
-                //Log.d(TAG, "滑动变化c"+i);
-            }
+            public void onPageScrollStateChanged(int i) {}
         });
-//        weatherNowTableList=LitePal.where("cityName=?", cityname).find(WeatherNowTable.class);
-//        Log.d(TAG, "主界面判断frame布局加载完成没有"+cityname+","+weatherNowTableList.size());
-//        if(weatherNowTableList.size()>0)
-//        {
-//            weatherUpdateTableList=LitePal.where("cityName=?", cityname).find(WeatherUpdateTable.class);
-//            if(SystemTool.timeDifference(weatherUpdateTableList.get(0).getUpdateTime(),"hour")>3||
-//                    SystemTool.timeDifference(weatherUpdateTableList.get(0).getUpdateTime(),"day")>0)
-//            {
-//                WeatherInfo wf=(WeatherInfo) fragmentList.get(getCityNameIndex());
-//                wf.doRefresh();
-//            }
-//        }
 
 
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
@@ -302,12 +268,52 @@ public class MainActivity extends AppCompatActivity {
                         goToCityManage();
                         break;
                     case R.id.nav_theme:
+
+
+//
+                        final Integer[] res = new Integer[]{R.drawable.theme_default,R.drawable.theme_red,R.drawable.theme_pink,R.drawable.theme_brown,R.drawable.theme_blue,R.drawable.theme_bluegrey,R.drawable.theme_yellow,R.drawable.theme_deeppurple,R.drawable.theme_green,R.drawable.theme_deeporange,R.drawable.theme_grey,R.drawable.theme_cyan,R.drawable.theme_amber};
+                        List<Integer> list = Arrays.asList(res);
+                        ThemeGridviewAdapter adapter = new ThemeGridviewAdapter(MainActivity.this, list);
+                        //adapter.setCheckItem(MyThemeUtils.getCurrentTheme(MainActivity.this).getIntValue());
+                        View gridListView=getLayoutInflater().inflate(R.layout.theme_list_item,null);
+                        GridView gridView = gridListView.findViewById(R.id.theme_item);
+//                        gridView.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);
+//                        gridView.setCacheColorHint(0);
+                        gridView.setAdapter(adapter);
+
+
+
+
+                        drawerLayout.closeDrawer(GravityCompat.START);
+                        final MyPopWindow popWindow=new MyPopWindow(gridListView,displayWidth-80*(int)denisty,WindowManager.LayoutParams.WRAP_CONTENT);
+                        popWindow.showAtLocation(getLayoutInflater().inflate(R.layout.activity_main,null),Gravity.CENTER,0,0);
+
+                        gridView.setOnItemClickListener(
+                                new AdapterView.OnItemClickListener() {
+                                    @Override
+                                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                                        popWindow.dismiss();
+                                        int themeId=getThemeName(position);
+                                        SharedPreferences.Editor editor = getSharedPreferences("color", MODE_PRIVATE).edit();
+                                        editor.putInt("changeTheme",themeId);
+                                        editor.apply();
+                                        Intent themeIntent=new Intent(MainActivity.this,CitySelectActivity.class);
+                                        finish();
+                                        startActivity(themeIntent);
+
+                                        //Toast.makeText(MainActivity.this,String.valueOf(themeId),Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+
+                        );
+
                         break;
                     case R.id.nav_update:
                         break;
                     case R.id.nav_setting:
                         Intent intent=new Intent(MainActivity.this,WeatherSetting.class);
                         startActivity(intent);
+                        drawerLayout.closeDrawer(GravityCompat.START);
                         break;
                     case R.id.nav_about:
                         break;
@@ -329,7 +335,6 @@ public class MainActivity extends AppCompatActivity {
 
         RequestOptions options = new RequestOptions()
                 .override(getResources().getDisplayMetrics().widthPixels, getResources().getDisplayMetrics().heightPixels)
-                //.centerCrop()
                 .transform(new MultiTransformation(new BlurTransformation(40,5),new CenterCrop()))
                 ;
         Glide.with(this)
@@ -365,15 +370,23 @@ public class MainActivity extends AppCompatActivity {
                 break;
 
             case R.id.setting:
+                Intent intent=new Intent(MainActivity.this,WeatherSetting.class);
+                startActivity(intent);
                 Toast.makeText(this,"点击了设置选项",Toast.LENGTH_SHORT).show();
                 break;
 
             case R.id.share:
-                Toast.makeText(this,"点击了分享选项",Toast.LENGTH_SHORT).show();
+                SharedPreferences.Editor editor = getSharedPreferences("color", MODE_PRIVATE).edit();
+                editor.putBoolean("change",true);
+                editor.apply();
+
+
+                //Toast.makeText(this,"点击了分享选项",Toast.LENGTH_SHORT).show();
                 break;
 
             case R.id.exit:
                 Toast.makeText(this,"点击了退出选项",Toast.LENGTH_SHORT).show();
+                finish();
                 break;
         }
         return true;
@@ -421,10 +434,49 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    private int getThemeName(int position)
+    {
+        switch (position)
+        {
+            case 0:
+                return R.style.AppTheme;
+            case 1:
+                return R.style.RedTheme;
+            case 2:
+                return R.style.PinkTheme;
+            case 3:
+                return R.style.BrownTheme;
+            case 4:
+                return R.style.BlueTheme;
+            case 5:
+                return R.style.BlueGreyTheme;
+            case 6:
+                return R.style.YellowTheme;
+            case 7:
+                return R.style.DeepPurpleTheme;
+            case 8:
+                return R.style.GreenTheme;
+            case 9:
+                return R.style.DeepOrangeTheme;
+            case 10:
+                return R.style.GreyTheme;
+            case 11:
+                return R.style.CyanTheme;
+            case 12:
+                return R.style.AmberTheme;
+                default:
+                    return R.style.AppTheme;
+
+        }
+    }
+
+
     @Override
     protected void onDestroy()
     {
-        unbindService(serviceConnection);
+        if(SystemTool.isServiceRunning(this,"com.wcedla.wcedlaweather.service.WeatherUpdateService")) {
+            unbindService(serviceConnection);
+        }
         super.onDestroy();
     }
 

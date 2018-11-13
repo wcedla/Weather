@@ -41,59 +41,164 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:orientation="vertical">
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="50dp">
 
-            <ImageView
-                android:id="@+id/setting_notification"
-                android:layout_width="wrap_content"
+            <!--通知栏设置组-->
+            <LinearLayout
+                android:id="@+id/notification_items"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:layout_alignParentStart="true"
-                android:layout_marginStart="30dp"
-                android:src="@drawable/notification" />
+                android:orientation="vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp">
+
+                    <ImageView
+                        android:id="@+id/setting_notification_icon"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:layout_marginStart="30dp"
+                        android:src="@drawable/notification" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_marginStart="15dp"
+                        android:layout_toEndOf="@id/setting_notification_icon"
+                        android:text="通知栏"
+                        android:textAlignment="center"
+                        android:textColor="#000000"
+                        android:textSize="15sp" />
+
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/notification_button_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:clickable="true">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:layout_marginStart="40dp"
+                        android:text="开启通知栏" />
+
+                    <com.wcedla.wcedlaweather.view.SwitchButton
+                        android:id="@+id/notification_switch_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:layout_marginEnd="30dp"
+                        app:CircleColor="?attr/colorPrimary"
+                        app:ShapeColor="#d3d3d3" />
+                </RelativeLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/setting_update"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_toEndOf="@id/setting_notification"
-                android:layout_centerVertical="true"
-                android:layout_marginStart="15dp"
-                android:textAlignment="center"
-                android:textColor="#000000"
-                android:textSize="15sp"
-                android:text="通知栏"/>
+                android:orientation="vertical">
 
-        </RelativeLayout>
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp">
 
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="50dp">
+                    <ImageView
+                        android:id="@+id/setting_update_icon"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:layout_marginStart="30dp"
+                        android:src="@drawable/setting_background" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_centerVertical="true"
-                android:layout_marginStart="40dp"
-                android:text="开启通知栏"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_marginStart="15dp"
+                        android:layout_toEndOf="@id/setting_update_icon"
+                        android:text="后台更新服务"
+                        android:textAlignment="center"
+                        android:textColor="#000000"
+                        android:textSize="15sp" />
 
-            <com.wcedla.wcedlaweather.view.SwitchButton
-                android:id="@+id/switch_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:layout_marginEnd="30dp"
-                app:CircleColor="@color/colorPrimary"
-                app:ShapeColor="#d3d3d3" />
+                </RelativeLayout>
 
-        </RelativeLayout>
+                <RelativeLayout
+                    android:id="@+id/setting_update_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:clickable="true">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:layout_marginStart="40dp"
+                        android:text="开启后台更新服务" />
+
+                    <com.wcedla.wcedlaweather.view.SwitchButton
+                        android:id="@+id/update_switch_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:layout_marginEnd="30dp"
+                        app:CircleColor="?attr/colorPrimary"
+                        app:ShapeColor="#d3d3d3" />
+                </RelativeLayout>
+
+                <RelativeLayout
+                    android:id="@+id/setting_update_time_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:clickable="true">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentStart="true"
+                        android:layout_centerVertical="true"
+                        android:layout_marginStart="40dp"
+                        android:text="更新频率" />
+
+                    <TextView
+                        android:id="@+id/update_time_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_toStartOf="@id/update_time_switch_image"
+                        android:layout_marginEnd="15dp"
+                        android:text="3小时" />
+
+                    <ImageView
+                        android:id="@+id/update_time_switch_image"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:layout_marginEnd="30dp"
+                        android:src="@drawable/more"
+                        />
+                </RelativeLayout>
+            </LinearLayout>
+
         </LinearLayout>
-
     </android.support.v4.widget.NestedScrollView>
 
 </LinearLayout>

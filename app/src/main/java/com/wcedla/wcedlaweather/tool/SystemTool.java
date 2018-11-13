@@ -125,6 +125,21 @@ public class SystemTool {
         return Week;
     }
 
+    public static Long getMillsForTimeStr(String pTime)
+    {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        Calendar c = Calendar.getInstance();
+        try {
+            c.setTime(format.parse(pTime));
+
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        //Log.d(TAG, "时间2"+c.getTime());
+        return c.getTimeInMillis();
+    }
+
+
     /**
      *获取给定参数和当前时间的时间差
      *
