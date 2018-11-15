@@ -49,6 +49,7 @@ public class DownloadTask extends AsyncTask<String,Integer,Integer>
             //文件名
             String fileName=listener.getFileName();
             //文件路径，固定格式，路径存放为手机内存的download文件夹
+//            String directory=Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath()+File.separator;
             String directory = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "wcedla"+File.separator;
             File createFolder = new File(directory);//在手机内存的根目录或者指定目录下新建文件夹，如果不新建直接操作路径，会抛异常无法读取文件，所以要先创建文件夹再操作路径。
             createFolder.mkdirs();
@@ -58,11 +59,12 @@ public class DownloadTask extends AsyncTask<String,Integer,Integer>
                 downloadedLength = file.length();
             }
             long size = getContentLength(donwloadUrl);
-            Log.d(TAG, "网络文件大小" + size);
+            Log.d(TAG, "目标下载文件大小" + size);
             if (size == 0) {
+                Log.d(TAG, "目标下载文件出错，检查网址");
                 return TYPE_FAILED;
             } else if (size == downloadedLength) {
-                Log.d(TAG, "文件已下载完毕");
+                Log.d(TAG, "文件已存在并且之前已经下载过了");
                 // 已下载字节和文件总字节相等，说明已经下载完成了
                 return TYPE_SUCCESS;
             }
@@ -83,10 +85,12 @@ public class DownloadTask extends AsyncTask<String,Integer,Integer>
             {
                 if (isPause)//暂停按钮按下之后强制退出
                 {
+                    Log.d(TAG, "下载过程中检测到暂停下载指令");
                     return TYPE_PAUSED;
 
                 } else if (isCancel)//停止下载按钮按下之后强制退出
                 {
+                    Log.d(TAG, "下载过程中检测到取消下载指令");
                     return TYPE_CANCELED;
                 } else {
                     tempfile.write(bytes, 0, len);//注意每次写入的都是实际读取到的字节数，也就是len，不能完全写入bytes数组，因为不会自动清空bbytes数组。
@@ -94,7 +98,7 @@ public class DownloadTask extends AsyncTask<String,Integer,Integer>
                     publishProgress(downloadPercent);//及时更新下载的进度。
                 }
             }
-            Log.d(TAG, "最终写入文件大小" + tempfile.length());
+            Log.d(TAG, "写入结束，写入的文件的大小为" + tempfile.length());
             response.body().close();//关闭字节流。
             return TYPE_SUCCESS;//报告状态，下载成功。
         } catch(IOException e){
@@ -112,7 +116,7 @@ public class DownloadTask extends AsyncTask<String,Integer,Integer>
                 e.printStackTrace();
             }
         }
-
+        Log.d(TAG, "下载的操作有问题");
         return TYPE_FAILED;//前面所有操作都没有执行的话，就表示下载失败，有可能是网络资源无效等其他问题。
     }
 
@@ -121,7 +125,7 @@ public class DownloadTask extends AsyncTask<String,Integer,Integer>
     {
         int progress = values[0];//获取具体的下载进度。
         if (progress > lastProgress) {//借用lastprogress变量来达到下载进度更新之后再更新状态，否则更新太频繁会造成卡顿现象。
-            Log.d(TAG, "下载进度"+progress);
+            Log.d(TAG, "更新下载进度"+progress);
             listener.onProgress(progress);//下载监听器的作用，实现服务与子线程的数据交换通信。
             lastProgress = progress;
         }
@@ -130,16 +134,19 @@ public class DownloadTask extends AsyncTask<String,Integer,Integer>
     protected void onPostExecute(Integer status) {//处理doinbackground中各种return值，判断文件下载状态，通知服务做出反应。
         switch (status) {
             case TYPE_SUCCESS:
-                Log.d(TAG, "下载完成！");
+                Log.d(TAG, "收到下载完成return！");
                 listener.onSuccess();
                 break;
             case TYPE_FAILED:
+                Log.d(TAG, "收到下载失败return！");
                 listener.onFailed();
                 break;
             case TYPE_PAUSED:
+                Log.d(TAG, "收到下载暂停return！");
                 listener.onPaused();
                 break;
             case TYPE_CANCELED:
+                Log.d(TAG, "收到下载取消return！");
                 listener.onCanceled();
                 break;
             default:
@@ -167,11 +174,18 @@ public class DownloadTask extends AsyncTask<String,Integer,Integer>
 
     public void pauseDownload()
     {
+        Log.d(TAG, "service要求暂停下载");
         isPause=true;
     }
 
     public void cancelDownload()
     {
+        Log.d(TAG, "service要求取消下载");
         isCancel=true;
+    }
+
+    public File getFile()
+    {
+        return file;
     }
 }

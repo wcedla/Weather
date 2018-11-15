@@ -8,6 +8,8 @@ public class VersionTable extends LitePalSupport {
 
     private String versionName;
 
+    private String fileName;
+
     private String downloadUrl;
 
     public String getVersionCode() {
@@ -24,6 +26,14 @@ public class VersionTable extends LitePalSupport {
 
     public void setVersionName(String versionName) {
         this.versionName = versionName;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 
     public String getDownloadUrl() {

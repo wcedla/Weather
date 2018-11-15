@@ -196,11 +196,13 @@ public class JsonTool {
                 JSONObject jsonObject=jsonArray.getJSONObject(i);
                 String versionCode=jsonObject.getString("versionCode");
                 String versionName=jsonObject.getString("versionName");
+                String fileName=jsonObject.getString("fileName");
                 String downloadUrl=jsonObject.getString("downloadUrl");
                 Log.d(TAG, "json解析的版本信息"+versionCode+","+versionName+","+downloadUrl);
                 VersionTable versionTable=new VersionTable();
                 versionTable.setVersionCode(versionCode);
                 versionTable.setVersionName(versionName);
+                versionTable.setFileName(fileName);
                 versionTable.setDownloadUrl(downloadUrl);
                 versionTable.save();
             }

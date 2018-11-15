@@ -14,6 +14,9 @@
     <uses-permission
         android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS"
         tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+    <uses-permission android:name="android.permission.INSTALL_PACKAGES"
+        tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
@@ -25,6 +28,18 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
+
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="com.wcedla.wcedlaweather.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+
         <meta-data
             android:name="com.baidu.lbsapi.API_KEY"
             android:value="qZlvaYUv2OqQCp5RCdslZyum6grBsLSq" />

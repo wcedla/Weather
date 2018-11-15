@@ -1,5 +1,6 @@
 package com.wcedla.wcedlaweather;
 
+import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
@@ -27,15 +28,19 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.constraint.Constraints;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
@@ -115,7 +120,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.litepal.LitePal;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
+import java.lang.ref.WeakReference;
+import java.net.URISyntaxException;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -152,21 +161,25 @@ public class MainActivity extends BaseActivity {
     List<WeatherForecastTable> weatherForecastTableList;
     List<WeatherHourlyTable> weatherHourlyTableList;
     List<WeatherLifeStyleTable> weatherLifeStyleTableList;
-    List<Fragment> fragmentList=new ArrayList<>();
+    List<Fragment> fragmentList = new ArrayList<>();
     List<CityListTable> cityListTableList;
 
     Intent intent;
     DisplayMetrics displayMetrics;
-    int displayWidth,displayHeight;
+    int displayWidth, displayHeight;
     float denisty;
 
     WeatherUpdateService.WeatherBinder weatherBinder;
 
-    ServiceConnection serviceConnection=new ServiceConnection() {
+    File file;
+    List<VersionTable> versionTableList;
+
+    ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            weatherBinder=(WeatherUpdateService.WeatherBinder)iBinder;
+            weatherBinder = (WeatherUpdateService.WeatherBinder) iBinder;
             weatherBinder.SetNotification();
+
         }
 
         @Override
@@ -177,10 +190,13 @@ public class MainActivity extends BaseActivity {
 
     DownloadService.DownloadBinder downloadBinder;
 
-    ServiceConnection downloadConnection=new ServiceConnection() {
+    ServiceConnection downloadConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            downloadBinder=(DownloadService.DownloadBinder)service;
+            downloadBinder = (DownloadService.DownloadBinder) service;
+            downloadBinder.setFileName(versionTableList.get(0).getFileName());
+            downloadBinder.startDownload(versionTableList.get(0).getDownloadUrl());
+            downloadBinder.setHandler(myHandler);
         }
 
         @Override
@@ -189,19 +205,19 @@ public class MainActivity extends BaseActivity {
         }
     };
 
-    public static boolean isStart = false;//用于判读下载服务是否启动,设置数值在downloadservice的startDownload方法下。
-    public static boolean isPause = false;//用于判断下载服务是否暂停，设置数值在downloadservice的pauseDownload方法下。
-    public static boolean isCancel = false;//用于判断下载服务是否停止，设置数值在downloadservice的cancelDownload方法下。
+//    public static boolean isStart = false;//用于判读下载服务是否启动,设置数值在downloadservice的startDownload方法下。
+//    public static boolean isPause = false;//用于判断下载服务是否暂停，设置数值在downloadservice的pauseDownload方法下。
+//    public static boolean isCancel = false;//用于判断下载服务是否停止，设置数值在downloadservice的cancelDownload方法下。
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        displayMetrics=getResources().getDisplayMetrics();
-        displayWidth=displayMetrics.widthPixels;
-        displayHeight=displayMetrics.heightPixels;
-        denisty=displayMetrics.density;
+        displayMetrics = getResources().getDisplayMetrics();
+        displayWidth = displayMetrics.widthPixels;
+        displayHeight = displayMetrics.heightPixels;
+        denisty = displayMetrics.density;
 
         SystemTool.setNavigationBarStatusBarTranslucent(this);
         Bundle bundle = getIntent().getExtras();
@@ -210,17 +226,15 @@ public class MainActivity extends BaseActivity {
         }
 
 
-        intent=new Intent(this,WeatherUpdateService.class);
+        intent = new Intent(this, WeatherUpdateService.class);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if(!SystemTool.isServiceRunning(this,"com.wcedla.wcedlaweather.service.WeatherUpdateService")) {
+            if (!SystemTool.isServiceRunning(this, "com.wcedla.wcedlaweather.service.WeatherUpdateService")) {
                 startForegroundService(intent);
 
 
             }
-        }
-        else
-        {
-            if(!SystemTool.isServiceRunning(this,"com.wcedla.wcedlaweather.service.WeatherUpdateService"))
+        } else {
+            if (!SystemTool.isServiceRunning(this, "com.wcedla.wcedlaweather.service.WeatherUpdateService"))
                 startService(intent);
         }
         bindService(intent, serviceConnection, BIND_AUTO_CREATE);
@@ -233,31 +247,30 @@ public class MainActivity extends BaseActivity {
         drawerLayout = findViewById(R.id.drawerlayout);
         weatherDetial = findViewById(R.id.weatherdetial);
         navigationView = findViewById(R.id.nav_view);
-        viewPager=findViewById(R.id.viewpager);
-        cityListTableList=LitePal.findAll(CityListTable.class);
-        int cityCount=cityListTableList.size();
-        for(int i=0;i<cityCount;i++)
-        {
+        viewPager = findViewById(R.id.viewpager);
+        cityListTableList = LitePal.findAll(CityListTable.class);
+        int cityCount = cityListTableList.size();
+        for (int i = 0; i < cityCount; i++) {
             fragmentList.add(new WeatherInfo().newInstance(cityListTableList.get(i).getCityName()));
         }
-        weatherPagerAdapter=new WeatherPagerAdapter(getSupportFragmentManager(),fragmentList);
+        weatherPagerAdapter = new WeatherPagerAdapter(getSupportFragmentManager(), fragmentList);
         viewPager.setAdapter(weatherPagerAdapter);
-        Log.d(TAG, "索引"+getCityNameIndex());
+        Log.d(TAG, "索引" + getCityNameIndex());
         viewPager.setCurrentItem(getCityNameIndex());
         viewPager.setOffscreenPageLimit(0);
         viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
-            public void onPageScrolled(int i, float v, int i1) {}
+            public void onPageScrolled(int i, float v, int i1) {
+            }
 
             @Override
             public void onPageSelected(int i) {
-                Log.d(TAG, "滑动变化b"+i+(WeatherInfo)(fragmentList.get(0)));
+                Log.d(TAG, "滑动变化b" + i + (WeatherInfo) (fragmentList.get(0)));
                 tbCityName.setText(cityListTableList.get(i).getCityName());
-                weatherNowTableList=LitePal.where("cityName=?", cityListTableList.get(i).getCityName()).find(WeatherNowTable.class);
-                if(weatherNowTableList.size()>0&&tbWeatherText!=null&&tbTemperature!=null)
-                {
+                weatherNowTableList = LitePal.where("cityName=?", cityListTableList.get(i).getCityName()).find(WeatherNowTable.class);
+                if (weatherNowTableList.size() > 0 && tbWeatherText != null && tbTemperature != null) {
                     tbWeatherText.setText(weatherNowTableList.get(0).getWeatherText());
-                    tbTemperature.setText(weatherNowTableList.get(0).getTemperature()+"°");
+                    tbTemperature.setText(weatherNowTableList.get(0).getTemperature() + "°");
                 }
 
                 SharedPreferences.Editor editor = getSharedPreferences("cityselect", MODE_PRIVATE).edit();
@@ -265,11 +278,9 @@ public class MainActivity extends BaseActivity {
                 editor.apply();
 
 
+                weatherUpdateTableList = LitePal.where("cityName=?", cityListTableList.get(i).getCityName()).find(WeatherUpdateTable.class);
 
-                weatherUpdateTableList=LitePal.where("cityName=?", cityListTableList.get(i).getCityName()).find(WeatherUpdateTable.class);
-
-                if(weatherNowTableList.size()>0)
-                {
+                if (weatherNowTableList.size() > 0) {
                     if (SystemTool.timeDifference(weatherUpdateTableList.get(0).getUpdateTime(), "hour") > 3 || SystemTool.timeDifference(weatherUpdateTableList.get(0).getUpdateTime(), "day") > 0) {
                         WeatherInfo wf = (WeatherInfo) fragmentList.get(i);
                         wf.doRefresh();
@@ -279,7 +290,8 @@ public class MainActivity extends BaseActivity {
             }
 
             @Override
-            public void onPageScrollStateChanged(int i) {}
+            public void onPageScrollStateChanged(int i) {
+            }
         });
 
 
@@ -294,36 +306,34 @@ public class MainActivity extends BaseActivity {
 
 
 //
-                        final Integer[] res = new Integer[]{R.drawable.theme_default,R.drawable.theme_red,R.drawable.theme_pink,R.drawable.theme_brown,R.drawable.theme_blue,R.drawable.theme_bluegrey,R.drawable.theme_yellow,R.drawable.theme_deeppurple,R.drawable.theme_green,R.drawable.theme_deeporange,R.drawable.theme_grey,R.drawable.theme_cyan,R.drawable.theme_amber};
+                        final Integer[] res = new Integer[]{R.drawable.theme_default, R.drawable.theme_red, R.drawable.theme_pink, R.drawable.theme_brown, R.drawable.theme_blue, R.drawable.theme_bluegrey, R.drawable.theme_yellow, R.drawable.theme_deeppurple, R.drawable.theme_green, R.drawable.theme_deeporange, R.drawable.theme_grey, R.drawable.theme_cyan, R.drawable.theme_amber};
                         List<Integer> list = Arrays.asList(res);
                         ThemeGridviewAdapter adapter = new ThemeGridviewAdapter(MainActivity.this, list);
                         SharedPreferences settingXml = getSharedPreferences("color", MODE_PRIVATE);
-                        int themePosition=settingXml.getInt("themePosition",0);
+                        int themePosition = settingXml.getInt("themePosition", 0);
                         adapter.setCheckItem(themePosition);
-                        View gridListView=getLayoutInflater().inflate(R.layout.theme_list_item,null);
+                        View gridListView = getLayoutInflater().inflate(R.layout.theme_list_item, null);
                         GridView gridView = gridListView.findViewById(R.id.theme_item);
 //                        gridView.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);
 //                        gridView.setCacheColorHint(0);
                         gridView.setAdapter(adapter);
 
 
-
-
                         drawerLayout.closeDrawer(GravityCompat.START);
-                        final MyPopWindow popWindow=new MyPopWindow(gridListView,displayWidth-80*(int)denisty,WindowManager.LayoutParams.WRAP_CONTENT);
-                        popWindow.showAtLocation(getLayoutInflater().inflate(R.layout.activity_main,null),Gravity.CENTER,0,0);
+                        final MyPopWindow popWindow = new MyPopWindow(gridListView, displayWidth - 80 * (int) denisty, WindowManager.LayoutParams.WRAP_CONTENT);
+                        popWindow.showAtLocation(getLayoutInflater().inflate(R.layout.activity_main, null), Gravity.CENTER, 0, 0);
 
                         gridView.setOnItemClickListener(
                                 new AdapterView.OnItemClickListener() {
                                     @Override
                                     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                                         popWindow.dismiss();
-                                        int themeId=getThemeName(position);
+                                        int themeId = getThemeName(position);
                                         SharedPreferences.Editor editor = getSharedPreferences("color", MODE_PRIVATE).edit();
-                                        editor.putInt("changeTheme",themeId);
-                                        editor.putInt("themePosition",position);
+                                        editor.putInt("changeTheme", themeId);
+                                        editor.putInt("themePosition", position);
                                         editor.apply();
-                                        Intent themeIntent=new Intent(MainActivity.this,CitySelectActivity.class);
+                                        Intent themeIntent = new Intent(MainActivity.this, CitySelectActivity.class);
                                         finish();
                                         startActivity(themeIntent);
 
@@ -337,42 +347,39 @@ public class MainActivity extends BaseActivity {
                     case R.id.nav_update:
 
 
-
-                        String url="https://wcedla.oss-cn-shanghai.aliyuncs.com/city_json/weatherversion.json";
+                        String url = "https://wcedla.oss-cn-shanghai.aliyuncs.com/city_json/weatherversion.json";
                         HttpTool.doHttpRequest(url, new Callback() {
                             @Override
                             public void onFailure(Call call, IOException e) {
                                 runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
-                                        Toast.makeText(MainActivity.this,"版本检查失败",Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(MainActivity.this, "版本检查失败", Toast.LENGTH_SHORT).show();
                                     }
                                 });
                             }
 
                             @Override
                             public void onResponse(Call call, Response response) throws IOException {
-                                String responseData=response.body().string();
+                                String responseData = response.body().string();
                                 //Log.d(TAG, "获取到的原生json文本"+responseData);
 
-                                boolean result=JsonTool.dealVersionJson(responseData);
-                                if(result)
-                                {
-                                    int versionCode=0;
-                                    List<VersionTable> versionTableList=LitePal.findAll(VersionTable.class);
-                                    int newVersionCode=Integer.valueOf(versionTableList.get(0).getVersionCode());
+                                boolean result = JsonTool.dealVersionJson(responseData);
+                                if (result) {
+                                    int versionCode = 0;
+                                    List<VersionTable> versionTableList = LitePal.findAll(VersionTable.class);
+                                    int newVersionCode = Integer.valueOf(versionTableList.get(0).getVersionCode());
                                     try {
-                                        PackageInfo packageInfo=getPackageManager().getPackageInfo(getPackageName(), 0);
-                                        versionCode=packageInfo.versionCode;
+                                        PackageInfo packageInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+                                        versionCode = packageInfo.versionCode;
                                         //Toast.makeText(MainActivity.this,String.valueOf(versionCode),Toast.LENGTH_SHORT).show();
                                     } catch (PackageManager.NameNotFoundException e) {
                                         e.printStackTrace();
                                     }
-                                    if(newVersionCode>versionCode)
-                                    {
-                                        Message message=new Message();
-                                        message.what=1;
-                                        message.obj=versionTableList;
+                                    if (newVersionCode > versionCode) {
+                                        Message message = new Message();
+                                        message.what = 1;
+                                        message.obj = versionTableList;
                                         myHandler.sendMessage(message);
                                     }
                                 }
@@ -380,11 +387,9 @@ public class MainActivity extends BaseActivity {
                         });
 
 
-
-
                         break;
                     case R.id.nav_setting:
-                        Intent intent=new Intent(MainActivity.this,WeatherSetting.class);
+                        Intent intent = new Intent(MainActivity.this, WeatherSetting.class);
                         startActivity(intent);
                         drawerLayout.closeDrawer(GravityCompat.START);
                         break;
@@ -408,7 +413,7 @@ public class MainActivity extends BaseActivity {
 
         RequestOptions options = new RequestOptions()
                 .override(getResources().getDisplayMetrics().widthPixels, getResources().getDisplayMetrics().heightPixels)
-                .transform(new MultiTransformation(new BlurTransformation(40,5),new CenterCrop()));
+                .transform(new MultiTransformation(new BlurTransformation(40, 5), new CenterCrop()));
         Glide.with(this)
                 .load(R.drawable.background)
                 .apply(options)
@@ -422,53 +427,76 @@ public class MainActivity extends BaseActivity {
         Toast.makeText(this, cityname, Toast.LENGTH_SHORT).show();
 
 
-
-
-
     }
 
-    @SuppressLint("HandlerLeak")
-    Handler myHandler=new Handler()
-    {
+
+    String fileName;
+    public MyHandler myHandler = new MyHandler(this);
+
+    public static class MyHandler extends Handler {
+        // WeakReference to the outer class's instance.
+        private WeakReference<MainActivity> mOuter;
+
+        public MyHandler(MainActivity activity) {
+            mOuter = new WeakReference<MainActivity>(activity);
+        }
+
         @Override
         public void handleMessage(Message msg) {
-            switch (msg.what)
-            {
-                case 1:
-                    final List<VersionTable> versionTableList=(List<VersionTable>)msg.obj;
-                    Log.d(TAG, "收到消息,版本有更新！");
-                    AlertDialog.Builder dialog =new AlertDialog.Builder(MainActivity.this);
-                    dialog.setTitle("发现新版本！");
-                    dialog.setMessage("是否下载最新版本？");
-                    dialog.setPositiveButton("是", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            Intent downloadIntent=new Intent(MainActivity.this,DownloadService.class);
+            final MainActivity outer = mOuter.get();
+            if (outer != null) {
+                switch (msg.what) {
+                    case 1:
+                        final Intent downloadIntent = new Intent(outer, DownloadService.class);
 
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                    startForegroundService(downloadIntent);
+
+
+                        final List<VersionTable> versionTableList = (List<VersionTable>) msg.obj;
+                        outer.versionTableList=versionTableList;
+                        outer.fileName=versionTableList.get(0).getFileName();
+                        Log.d(TAG, "收到消息,版本有更新！");
+                        AlertDialog.Builder dialog = new AlertDialog.Builder(outer);
+                        dialog.setTitle("发现新版本！");
+                        dialog.setMessage("是否下载最新版本？");
+                        dialog.setPositiveButton("是", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    outer.startForegroundService(downloadIntent);
+                                } else {
+                                    outer.startService(downloadIntent);
+                                }
+                                outer.bindService(downloadIntent, outer.downloadConnection, BIND_AUTO_CREATE);
+
+//                                    outer.downloadBinder.setFileName(versionTableList.get(0).getFileName());
+//                                    outer.downloadBinder.startDownload(versionTableList.get(0).getDownloadUrl());
+//                                    outer.downloadBinder.setHandler(outer.myHandler);
+
+                                //Toast.makeText(outer, "点击了是").show();
                             }
-                            else
-                            {
-                                    startService(downloadIntent);
+                        });
+                        dialog.setNegativeButton("否", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+//                                outer.downloadBinder.stopService();
+//                                outer.unbindService(outer.downloadConnection);
+                                //Toast.makeText(outer, "点击了否", Toast.LENGTH_SHORT).show();
                             }
-                            bindService(downloadIntent,downloadConnection,BIND_AUTO_CREATE);
-//                            downloadBinder.setFileName(versionTableList.get(0).getVersionName());
-//                            downloadBinder.startDownload(versionTableList.get(0).getDownloadUrl());
-                            Toast.makeText(MainActivity.this,"点击了是"+downloadBinder,Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                    dialog.setNegativeButton("否", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            Toast.makeText(MainActivity.this,"点击了否",Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                    dialog.show();
-                    break;
+                        });
+                        dialog.show();
+                        break;
+                    case 2:
+                        outer.file = (File) msg.obj;
+                        outer.checkInstallPermission();
+                        outer.downloadBinder.stopService();
+                        outer.unbindService(outer.downloadConnection);
+                        //Toast.makeText(outer, "有用啊", Toast.LENGTH_SHORT).show();
+                        break;
+                }
             }
         }
-    };
+    }
 
 
     @Override
@@ -485,14 +513,14 @@ public class MainActivity extends BaseActivity {
                 break;
 
             case R.id.setting:
-                Intent intent=new Intent(MainActivity.this,WeatherSetting.class);
+                Intent intent = new Intent(MainActivity.this, WeatherSetting.class);
                 startActivity(intent);
-                Toast.makeText(this,"点击了设置选项",Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "点击了设置选项", Toast.LENGTH_SHORT).show();
                 break;
 
             case R.id.share:
                 SharedPreferences.Editor editor = getSharedPreferences("color", MODE_PRIVATE).edit();
-                editor.putBoolean("change",true);
+                editor.putBoolean("change", true);
                 editor.apply();
 
 
@@ -500,7 +528,7 @@ public class MainActivity extends BaseActivity {
                 break;
 
             case R.id.exit:
-                Toast.makeText(this,"点击了退出选项",Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "点击了退出选项", Toast.LENGTH_SHORT).show();
                 finish();
                 break;
         }
@@ -508,12 +536,9 @@ public class MainActivity extends BaseActivity {
     }
 
 
-    private int getCityNameIndex()
-    {
-        for(int i=0;i<cityListTableList.size();i++)
-        {
-            if(cityListTableList.get(i).getCityName().equals(cityname))
-            {
+    private int getCityNameIndex() {
+        for (int i = 0; i < cityListTableList.size(); i++) {
+            if (cityListTableList.get(i).getCityName().equals(cityname)) {
                 return i;
             }
         }
@@ -543,16 +568,13 @@ public class MainActivity extends BaseActivity {
 
     }
 
-    public void setNotification()
-    {
+    public void setNotification() {
         weatherBinder.SetNotification();
     }
 
 
-    private int getThemeName(int position)
-    {
-        switch (position)
-        {
+    private int getThemeName(int position) {
+        switch (position) {
             case 0:
                 return R.style.AppTheme;
             case 1:
@@ -579,19 +601,82 @@ public class MainActivity extends BaseActivity {
                 return R.style.CyanTheme;
             case 12:
                 return R.style.AmberTheme;
-                default:
-                    return R.style.AppTheme;
+            default:
+                return R.style.AppTheme;
+
+        }
+    }
+
+
+    public void checkInstallPermission() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            boolean permit = getPackageManager().canRequestPackageInstalls();
+            if (!permit) {
+                //请求安装未知应用来源的权限
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.REQUEST_INSTALL_PACKAGES}, 11);
+            } else {
+                installApk();
+            }
+
+        } else {
+            installApk();
+        }
+    }
+
+    public void installApk() {
+
+        Uri uri;
+        Intent intent = new Intent();
+        intent.setAction(Intent.ACTION_VIEW);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            // "net.csdn.blog.ruancoder.fileprovider"即是在清单文件中配置的authorities
+            uri = FileProvider.getUriForFile(this, "com.wcedla.wcedlaweather.fileprovider", file);
+            // 给目标应用一个临时授权
+
+        } else {
+            uri = Uri.fromFile(file);
+        }
+        intent.setDataAndType(uri, "application/vnd.android.package-archive");
+        startActivity(intent);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case 11:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    installApk();
+                } else {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES);
+                    startActivityForResult(intent, 15);
+                }
+                break;
 
         }
     }
 
 
     @Override
-    protected void onDestroy()
-    {
-        if(SystemTool.isServiceRunning(this,"com.wcedla.wcedlaweather.service.WeatherUpdateService")) {
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+                checkInstallPermission();
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        if (SystemTool.isServiceRunning(this, "com.wcedla.wcedlaweather.service.WeatherUpdateService")) {
             unbindService(serviceConnection);
         }
+        if (SystemTool.isServiceRunning(this, "com.wcedla.wcedlaweather.service.DownloadService")) {
+            downloadBinder.stopService();
+            unbindService(downloadConnection);
+        }
+
         super.onDestroy();
     }
 
