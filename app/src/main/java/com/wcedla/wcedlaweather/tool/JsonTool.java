@@ -1,10 +1,14 @@
 package com.wcedla.wcedlaweather.tool;
 
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.wcedla.wcedlaweather.db.HotCityTable;
 import com.wcedla.wcedlaweather.db.TypeSearchtable;
+import com.wcedla.wcedlaweather.db.VersionTable;
 import com.wcedla.wcedlaweather.db.WeatherBasicTable;
 import com.wcedla.wcedlaweather.db.WeatherForecastTable;
 import com.wcedla.wcedlaweather.db.WeatherHourlyTable;
@@ -23,7 +27,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.litepal.LitePal;
 
+import java.io.IOException;
 import java.util.List;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 import static org.litepal.LitePalBase.TAG;
 
@@ -175,5 +184,32 @@ public class JsonTool {
             e.printStackTrace();
         }
         return false;
+    }
+
+    public static boolean dealVersionJson(String jsonData)
+    {
+        try {
+            JSONArray jsonArray=new JSONArray(jsonData);
+            LitePal.deleteAll(VersionTable.class);
+            for(int i=0;i<jsonArray.length();i++)
+            {
+                JSONObject jsonObject=jsonArray.getJSONObject(i);
+                String versionCode=jsonObject.getString("versionCode");
+                String versionName=jsonObject.getString("versionName");
+                String downloadUrl=jsonObject.getString("downloadUrl");
+                Log.d(TAG, "json解析的版本信息"+versionCode+","+versionName+","+downloadUrl);
+                VersionTable versionTable=new VersionTable();
+                versionTable.setVersionCode(versionCode);
+                versionTable.setVersionName(versionName);
+                versionTable.setDownloadUrl(downloadUrl);
+                versionTable.save();
+            }
+            return true;
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+            return false;
+        }
+
     }
 }

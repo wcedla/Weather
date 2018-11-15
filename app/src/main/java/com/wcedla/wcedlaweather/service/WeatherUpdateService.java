@@ -145,15 +145,18 @@ public class WeatherUpdateService extends Service {
         int rate = Integer.parseInt(String.valueOf(settingXml.getString("updateTime", "3小时").charAt(0)));
         //long updateTime = System.currentTimeMillis() + rate *60*60* 1000;
         //Log.d(TAG, "时间"+SystemTool.getMillsForTimeStr(weatherUpdateTableList.get(0).getUpdateTime()));
-        long updateTime = SystemTool.getMillsForTimeStr(weatherUpdateTableList.get(0).getUpdateTime()) + rate * 60 * 60 * 1000;
-        if (updateTime < System.currentTimeMillis()) {
-            updateTime += 1 * 60 * 60 * 1000;
+        if(weatherUpdateTableList.size()>0)
+        {
+            long updateTime = SystemTool.getMillsForTimeStr(weatherUpdateTableList.get(0).getUpdateTime()) + rate * 60 * 60 * 1000;
+            if (updateTime < System.currentTimeMillis()) {
+                updateTime += 1 * 60 * 60 * 1000;
+            }
+            Log.d(TAG, "时间" + updateTime);
+            Intent weatherIntent = new Intent(this, WeatherUpdateService.class);//重新执行一遍本段代码段
+            PendingIntent updatePI = PendingIntent.getService(this, 0, weatherIntent, 0);
+            alarmManager.cancel(updatePI);
+            alarmManager.set(AlarmManager.RTC_WAKEUP, updateTime, updatePI);
         }
-        Log.d(TAG, "时间" + updateTime);
-        Intent weatherIntent = new Intent(this, WeatherUpdateService.class);//重新执行一遍本段代码段
-        PendingIntent updatePI = PendingIntent.getService(this, 0, weatherIntent, 0);
-        alarmManager.cancel(updatePI);
-        alarmManager.set(AlarmManager.RTC_WAKEUP, updateTime, updatePI);
     }
 
     //数据绑定类

@@ -12,9 +12,12 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -80,6 +83,7 @@ import com.wcedla.wcedlaweather.adapter.ThemeGridviewAdapter;
 import com.wcedla.wcedlaweather.adapter.WeatherPagerAdapter;
 import com.wcedla.wcedlaweather.db.CityListTable;
 import com.wcedla.wcedlaweather.db.ProvinceTable;
+import com.wcedla.wcedlaweather.db.VersionTable;
 import com.wcedla.wcedlaweather.db.WeatherBasicTable;
 import com.wcedla.wcedlaweather.db.WeatherForecastTable;
 import com.wcedla.wcedlaweather.db.WeatherHourlyTable;
@@ -92,6 +96,7 @@ import com.wcedla.wcedlaweather.gson.WeatherGson;
 import com.wcedla.wcedlaweather.gson.WeatherLifeStyle;
 import com.wcedla.wcedlaweather.gson.WeatherNow;
 import com.wcedla.wcedlaweather.gson.WeatherUpdate;
+import com.wcedla.wcedlaweather.service.DownloadService;
 import com.wcedla.wcedlaweather.service.WeatherUpdateService;
 import com.wcedla.wcedlaweather.tool.BaseActivity;
 import com.wcedla.wcedlaweather.tool.HttpTool;
@@ -169,6 +174,24 @@ public class MainActivity extends BaseActivity {
             Log.d(TAG, "服务绑定断开");
         }
     };
+
+    DownloadService.DownloadBinder downloadBinder;
+
+    ServiceConnection downloadConnection=new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            downloadBinder=(DownloadService.DownloadBinder)service;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+
+        }
+    };
+
+    public static boolean isStart = false;//用于判读下载服务是否启动,设置数值在downloadservice的startDownload方法下。
+    public static boolean isPause = false;//用于判断下载服务是否暂停，设置数值在downloadservice的pauseDownload方法下。
+    public static boolean isCancel = false;//用于判断下载服务是否停止，设置数值在downloadservice的cancelDownload方法下。
 
 
     @Override
@@ -274,7 +297,9 @@ public class MainActivity extends BaseActivity {
                         final Integer[] res = new Integer[]{R.drawable.theme_default,R.drawable.theme_red,R.drawable.theme_pink,R.drawable.theme_brown,R.drawable.theme_blue,R.drawable.theme_bluegrey,R.drawable.theme_yellow,R.drawable.theme_deeppurple,R.drawable.theme_green,R.drawable.theme_deeporange,R.drawable.theme_grey,R.drawable.theme_cyan,R.drawable.theme_amber};
                         List<Integer> list = Arrays.asList(res);
                         ThemeGridviewAdapter adapter = new ThemeGridviewAdapter(MainActivity.this, list);
-                        //adapter.setCheckItem(MyThemeUtils.getCurrentTheme(MainActivity.this).getIntValue());
+                        SharedPreferences settingXml = getSharedPreferences("color", MODE_PRIVATE);
+                        int themePosition=settingXml.getInt("themePosition",0);
+                        adapter.setCheckItem(themePosition);
                         View gridListView=getLayoutInflater().inflate(R.layout.theme_list_item,null);
                         GridView gridView = gridListView.findViewById(R.id.theme_item);
 //                        gridView.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);
@@ -296,6 +321,7 @@ public class MainActivity extends BaseActivity {
                                         int themeId=getThemeName(position);
                                         SharedPreferences.Editor editor = getSharedPreferences("color", MODE_PRIVATE).edit();
                                         editor.putInt("changeTheme",themeId);
+                                        editor.putInt("themePosition",position);
                                         editor.apply();
                                         Intent themeIntent=new Intent(MainActivity.this,CitySelectActivity.class);
                                         finish();
@@ -309,6 +335,53 @@ public class MainActivity extends BaseActivity {
 
                         break;
                     case R.id.nav_update:
+
+
+
+                        String url="https://wcedla.oss-cn-shanghai.aliyuncs.com/city_json/weatherversion.json";
+                        HttpTool.doHttpRequest(url, new Callback() {
+                            @Override
+                            public void onFailure(Call call, IOException e) {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(MainActivity.this,"版本检查失败",Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+
+                            @Override
+                            public void onResponse(Call call, Response response) throws IOException {
+                                String responseData=response.body().string();
+                                //Log.d(TAG, "获取到的原生json文本"+responseData);
+
+                                boolean result=JsonTool.dealVersionJson(responseData);
+                                if(result)
+                                {
+                                    int versionCode=0;
+                                    List<VersionTable> versionTableList=LitePal.findAll(VersionTable.class);
+                                    int newVersionCode=Integer.valueOf(versionTableList.get(0).getVersionCode());
+                                    try {
+                                        PackageInfo packageInfo=getPackageManager().getPackageInfo(getPackageName(), 0);
+                                        versionCode=packageInfo.versionCode;
+                                        //Toast.makeText(MainActivity.this,String.valueOf(versionCode),Toast.LENGTH_SHORT).show();
+                                    } catch (PackageManager.NameNotFoundException e) {
+                                        e.printStackTrace();
+                                    }
+                                    if(newVersionCode>versionCode)
+                                    {
+                                        Message message=new Message();
+                                        message.what=1;
+                                        message.obj=versionTableList;
+                                        myHandler.sendMessage(message);
+                                    }
+                                }
+                            }
+                        });
+
+
+
+
                         break;
                     case R.id.nav_setting:
                         Intent intent=new Intent(MainActivity.this,WeatherSetting.class);
@@ -335,8 +408,7 @@ public class MainActivity extends BaseActivity {
 
         RequestOptions options = new RequestOptions()
                 .override(getResources().getDisplayMetrics().widthPixels, getResources().getDisplayMetrics().heightPixels)
-                .transform(new MultiTransformation(new BlurTransformation(40,5),new CenterCrop()))
-                ;
+                .transform(new MultiTransformation(new BlurTransformation(40,5),new CenterCrop()));
         Glide.with(this)
                 .load(R.drawable.background)
                 .apply(options)
@@ -354,6 +426,49 @@ public class MainActivity extends BaseActivity {
 
 
     }
+
+    @SuppressLint("HandlerLeak")
+    Handler myHandler=new Handler()
+    {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what)
+            {
+                case 1:
+                    final List<VersionTable> versionTableList=(List<VersionTable>)msg.obj;
+                    Log.d(TAG, "收到消息,版本有更新！");
+                    AlertDialog.Builder dialog =new AlertDialog.Builder(MainActivity.this);
+                    dialog.setTitle("发现新版本！");
+                    dialog.setMessage("是否下载最新版本？");
+                    dialog.setPositiveButton("是", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Intent downloadIntent=new Intent(MainActivity.this,DownloadService.class);
+
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                    startForegroundService(downloadIntent);
+                            }
+                            else
+                            {
+                                    startService(downloadIntent);
+                            }
+                            bindService(downloadIntent,downloadConnection,BIND_AUTO_CREATE);
+//                            downloadBinder.setFileName(versionTableList.get(0).getVersionName());
+//                            downloadBinder.startDownload(versionTableList.get(0).getDownloadUrl());
+                            Toast.makeText(MainActivity.this,"点击了是"+downloadBinder,Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                    dialog.setNegativeButton("否", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Toast.makeText(MainActivity.this,"点击了否",Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                    dialog.show();
+                    break;
+            }
+        }
+    };
 
 
     @Override
