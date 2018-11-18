@@ -49,6 +49,14 @@ public class LoadData extends BaseActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        SharedPreferences sharedPreferences = getSharedPreferences("jsonupgrade", MODE_PRIVATE);
+        isfirstrun = sharedPreferences.getBoolean("upgradeok", false);
+
+        if (!isfirstrun) {
+            setChinaData();
+        } else {
+            skipUpgrade();
+        }
         super.onCreate(savedInstanceState);
         hideBottomUIMenu();
         setContentView(R.layout.activity_load_data);
@@ -56,19 +64,12 @@ public class LoadData extends BaseActivity {
         progressBar = (ProgressBar) findViewById(R.id.upgrade_progress);
         upgradeimage = (ImageView) findViewById(R.id.upgrade_image);
         upgradeokbtn = (Button) findViewById(R.id.upgrade_okbtn);
-        SharedPreferences sharedPreferences = getSharedPreferences("jsonupgrade", MODE_PRIVATE);
-        isfirstrun = sharedPreferences.getBoolean("upgradeok", false);
         upgradeokbtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 skipUpgrade();
             }
         });
-        if (!isfirstrun) {
-            setChinaData();
-        } else {
-            skipUpgrade();
-        }
 
     }
 

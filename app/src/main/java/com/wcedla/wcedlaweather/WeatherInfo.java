@@ -109,6 +109,7 @@ public class WeatherInfo extends Fragment {
     boolean needRefresh;
 
 
+
     @Override
     public void onAttach(Context context) {
 

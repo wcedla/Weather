@@ -1,5 +1,6 @@
 package com.wcedla.wcedlaweather;
 
+import android.app.Instrumentation;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
@@ -10,8 +11,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -27,6 +30,7 @@ import static org.litepal.LitePalBase.TAG;
 
 public class WeatherSetting extends BaseActivity {
 
+    Button settingBackBtn;
     MyPopWindow myPopWindow;
     View popupView;
     WeatherUpdateService.WeatherBinder weatherBinder;
@@ -45,6 +49,7 @@ public class WeatherSetting extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         Intent intent=new Intent(this,WeatherUpdateService.class);
         bindService(intent, serviceConnection, BIND_AUTO_CREATE);
         SystemTool.setNavigationBarStatusBarTranslucent(this);
@@ -54,6 +59,25 @@ public class WeatherSetting extends BaseActivity {
         String updateString=settingXml.getString("updateTime","3小时");
 
         setContentView(R.layout.activity_weather_setting);
+
+        settingBackBtn=findViewById(R.id.setting_back_btn);
+        settingBackBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                new Thread() {
+                    public void run() {
+                        try {
+                            Instrumentation inst = new Instrumentation();
+                            inst.sendKeyDownUpSync(KeyEvent.KEYCODE_BACK);
+                        } catch (Exception e) {
+                            Log.d("wcedlalog", "状态栏返回键点击出错"+e.toString());
+                        }
+                    }
+                }.start();
+            }
+        });
+
+
         final SharedPreferences.Editor editor = getSharedPreferences("weatherSetting", MODE_PRIVATE).edit();
         final SwitchButton notificationButton=findViewById(R.id.notification_switch_button);
         RelativeLayout notificationSwitchLayout=findViewById(R.id.notification_button_layout);

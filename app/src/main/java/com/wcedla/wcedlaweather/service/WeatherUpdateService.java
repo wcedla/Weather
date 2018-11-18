@@ -83,7 +83,7 @@ public class WeatherUpdateService extends Service {
         } else {
             return super.onStartCommand(intent, flags, startId);
         }
-        isFirstRun = false;
+
 //        SharedPreferences sharedPreferences = getSharedPreferences("cityselect", MODE_PRIVATE);
 //        String cityName = sharedPreferences.getString("cityname", "");
 //        List<WeatherUpdateTable> weatherUpdateTableList = LitePal.where("cityName=?", cityName).find(WeatherUpdateTable.class);
@@ -105,7 +105,24 @@ public class WeatherUpdateService extends Service {
 //        PendingIntent updatePI = PendingIntent.getService(this, 0, weatherIntent, 0);
 //        alarmManager.cancel(updatePI);
 //        alarmManager.set(AlarmManager.RTC_WAKEUP, updateTime, updatePI);
-        setAlarmManager();
+        if(isFirstRun)
+        {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Thread.sleep(20000);
+                        setAlarmManager();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+        }
+        else
+            setAlarmManager();
+
+        isFirstRun = false;
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -147,10 +164,12 @@ public class WeatherUpdateService extends Service {
         //Log.d(TAG, "时间"+SystemTool.getMillsForTimeStr(weatherUpdateTableList.get(0).getUpdateTime()));
         if(weatherUpdateTableList.size()>0)
         {
-            long updateTime = SystemTool.getMillsForTimeStr(weatherUpdateTableList.get(0).getUpdateTime()) + rate * 60 * 60 * 1000;
-            if (updateTime < System.currentTimeMillis()) {
-                updateTime += 1 * 60 * 60 * 1000;
-            }
+            long updateTime;
+
+                updateTime = SystemTool.getMillsForTimeStr(weatherUpdateTableList.get(0).getUpdateTime()) + rate * 60 * 60 * 1000;
+                if (updateTime < System.currentTimeMillis()) {
+                    updateTime += 1 * 60 * 60 * 1000;
+                }
             Log.d(TAG, "时间" + updateTime);
             Intent weatherIntent = new Intent(this, WeatherUpdateService.class);//重新执行一遍本段代码段
             PendingIntent updatePI = PendingIntent.getService(this, 0, weatherIntent, 0);

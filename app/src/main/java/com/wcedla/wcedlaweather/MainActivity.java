@@ -170,6 +170,7 @@ public class MainActivity extends BaseActivity {
     float denisty;
 
     WeatherUpdateService.WeatherBinder weatherBinder;
+    boolean updateChecking=false;
 
     File file;
     List<VersionTable> versionTableList;
@@ -345,46 +346,62 @@ public class MainActivity extends BaseActivity {
 
                         break;
                     case R.id.nav_update:
+                        if(!updateChecking)
+                        {
+                            drawerLayout.closeDrawer(GravityCompat.START);
+                            updateChecking = true;
+                            Toast.makeText(MainActivity.this, "正在检查更新...", Toast.LENGTH_SHORT).show();
+                            String url = "https://wcedla.oss-cn-shanghai.aliyuncs.com/city_json/weatherversion.json";
+                            HttpTool.doHttpRequest(url, new Callback() {
+                                @Override
+                                public void onFailure(Call call, IOException e) {
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            Toast.makeText(MainActivity.this, "版本检查失败", Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                                }
 
+                                @Override
+                                public void onResponse(Call call, Response response) throws IOException {
+                                    String responseData = response.body().string();
+                                    //Log.d(TAG, "获取到的原生json文本"+responseData);
 
-                        String url = "https://wcedla.oss-cn-shanghai.aliyuncs.com/city_json/weatherversion.json";
-                        HttpTool.doHttpRequest(url, new Callback() {
-                            @Override
-                            public void onFailure(Call call, IOException e) {
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        Toast.makeText(MainActivity.this, "版本检查失败", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                            }
-
-                            @Override
-                            public void onResponse(Call call, Response response) throws IOException {
-                                String responseData = response.body().string();
-                                //Log.d(TAG, "获取到的原生json文本"+responseData);
-
-                                boolean result = JsonTool.dealVersionJson(responseData);
-                                if (result) {
-                                    int versionCode = 0;
-                                    List<VersionTable> versionTableList = LitePal.findAll(VersionTable.class);
-                                    int newVersionCode = Integer.valueOf(versionTableList.get(0).getVersionCode());
-                                    try {
-                                        PackageInfo packageInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
-                                        versionCode = packageInfo.versionCode;
-                                        //Toast.makeText(MainActivity.this,String.valueOf(versionCode),Toast.LENGTH_SHORT).show();
-                                    } catch (PackageManager.NameNotFoundException e) {
-                                        e.printStackTrace();
-                                    }
-                                    if (newVersionCode > versionCode) {
-                                        Message message = new Message();
-                                        message.what = 1;
-                                        message.obj = versionTableList;
-                                        myHandler.sendMessage(message);
+                                    boolean result = JsonTool.dealVersionJson(responseData);
+                                    if (result) {
+                                        int versionCode = 0;
+                                        List<VersionTable> versionTableList = LitePal.findAll(VersionTable.class);
+                                        int newVersionCode = Integer.valueOf(versionTableList.get(0).getVersionCode());
+                                        try {
+                                            PackageInfo packageInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+                                            versionCode = packageInfo.versionCode;
+                                            //Toast.makeText(MainActivity.this,String.valueOf(versionCode),Toast.LENGTH_SHORT).show();
+                                        } catch (PackageManager.NameNotFoundException e) {
+                                            e.printStackTrace();
+                                        }
+                                        if (newVersionCode > versionCode) {
+                                            Message message = new Message();
+                                            message.what = 1;
+                                            message.obj = versionTableList;
+                                            myHandler.sendMessage(message);
+                                        } else {
+                                            runOnUiThread(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    Toast.makeText(MainActivity.this, "暂时没有更新！", Toast.LENGTH_LONG).show();
+                                                    updateChecking=false;
+                                                }
+                                            });
+                                        }
                                     }
                                 }
-                            }
-                        });
+                            });
+                        }
+                        else
+                        {
+                            Toast.makeText(MainActivity.this,"程序已经在检查更新了，请不要连续点击更新！",Toast.LENGTH_SHORT).show();
+                        }
 
 
                         break;
@@ -394,6 +411,9 @@ public class MainActivity extends BaseActivity {
                         drawerLayout.closeDrawer(GravityCompat.START);
                         break;
                     case R.id.nav_about:
+                        Intent aboutintent = new Intent(MainActivity.this, AboutMe.class);
+                        startActivity(aboutintent);
+                        drawerLayout.closeDrawer(GravityCompat.START);
                         break;
                 }
                 return true;
@@ -450,10 +470,9 @@ public class MainActivity extends BaseActivity {
                         final Intent downloadIntent = new Intent(outer, DownloadService.class);
 
 
-
                         final List<VersionTable> versionTableList = (List<VersionTable>) msg.obj;
-                        outer.versionTableList=versionTableList;
-                        outer.fileName=versionTableList.get(0).getFileName();
+                        outer.versionTableList = versionTableList;
+                        outer.fileName = versionTableList.get(0).getFileName();
                         Log.d(TAG, "收到消息,版本有更新！");
                         AlertDialog.Builder dialog = new AlertDialog.Builder(outer);
                         dialog.setTitle("发现新版本！");
@@ -479,6 +498,7 @@ public class MainActivity extends BaseActivity {
                         dialog.setNegativeButton("否", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
+                                outer.updateChecking=false;
 //                                outer.downloadBinder.stopService();
 //                                outer.unbindService(outer.downloadConnection);
                                 //Toast.makeText(outer, "点击了否", Toast.LENGTH_SHORT).show();
@@ -491,6 +511,7 @@ public class MainActivity extends BaseActivity {
                         outer.checkInstallPermission();
                         outer.downloadBinder.stopService();
                         outer.unbindService(outer.downloadConnection);
+                        outer.updateChecking=false;
                         //Toast.makeText(outer, "有用啊", Toast.LENGTH_SHORT).show();
                         break;
                 }
@@ -663,7 +684,7 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-                checkInstallPermission();
+        checkInstallPermission();
     }
 
 
