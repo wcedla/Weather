@@ -1,0 +1,89 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#00000000"
+    android:padding="@dimen/widget_margin">
+
+   <TextClock
+       android:id="@+id/widget_time"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:layout_centerHorizontal="true"
+       android:textAlignment="center"
+       android:textColor="#FFFFFA"
+       android:textSize="65sp" />
+
+    <TextView
+        android:id="@+id/temp1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAlignment="center"
+        android:layout_below="@id/widget_time"
+        android:layout_centerHorizontal="true"
+        />
+
+    <TextClock
+        android:id="@+id/widget_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAlignment="center"
+        android:layout_below="@id/widget_time"
+        android:layout_toStartOf="@id/temp1"
+        android:layout_marginEnd="15dp"
+        android:textColor="#fffffA"
+        android:format24Hour="MM/dd"
+        android:format12Hour="MM/dd"
+        android:textSize="17sp" />
+    <TextClock
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAlignment="center"
+        android:layout_below="@id/widget_time"
+        android:layout_toEndOf="@id/temp1"
+        android:layout_marginStart="15dp"
+        android:textColor="#fffffA"
+        android:format24Hour="EE"
+        android:format12Hour="EE"
+        android:textSize="17sp"
+        />
+
+
+    <TextView
+        android:id="@+id/widget_city"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAlignment="center"
+        android:layout_below="@id/widget_date"
+        android:layout_marginTop="10dp"
+        android:layout_toStartOf="@id/widget_weather"
+        android:layout_marginEnd="15dp"
+        android:textColor="#fffffA"
+        android:textSize="15sp"
+        />
+
+    <TextView
+        android:id="@+id/widget_weather"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAlignment="center"
+        android:layout_below="@id/widget_date"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:textColor="#fffffA"
+        android:textSize="15sp"
+        />
+
+ <TextView
+     android:id="@+id/widget_temperature"
+     android:layout_width="wrap_content"
+     android:layout_height="wrap_content"
+     android:textAlignment="center"
+     android:layout_below="@id/widget_date"
+     android:layout_marginTop="10dp"
+     android:layout_toEndOf="@id/widget_weather"
+     android:layout_marginStart="15dp"
+     android:textColor="#fffffA"
+     android:textSize="15sp"
+     />
+
+</RelativeLayout>

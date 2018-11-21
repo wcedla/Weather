@@ -147,6 +147,7 @@ public class WeatherUpdateService extends Service {
                         responsedata = response.body().string();
                     }
                     JsonTool.dealWeatherJson(responsedata, cityName);
+                    SystemTool.updateWidgetForActivity(WeatherUpdateService.this);
                 }
             });
         }

@@ -295,6 +295,7 @@ public class WeatherInfo extends Fragment {
                                     showWeatherInfo();
                                     swipeRefreshLayout.setRefreshing(false);
                                     ((MainActivity) myActivity).weatherBinder.refreshAlarmManger();
+                                    SystemTool.updateWidgetForActivity(myActivity);
                                 }
                             });
 

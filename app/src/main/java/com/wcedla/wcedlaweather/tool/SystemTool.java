@@ -2,9 +2,14 @@ package com.wcedla.wcedlaweather.tool;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
@@ -18,8 +23,11 @@ import android.provider.MediaStore;
 import android.support.v4.content.FileProvider;
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
+import com.wcedla.wcedlaweather.MainActivity;
 import com.wcedla.wcedlaweather.R;
+import com.wcedla.wcedlaweather.myWidget;
 
 import org.litepal.LitePalBase;
 
@@ -209,60 +217,60 @@ public class SystemTool {
         return false;
     }
 
-    /**
-     * 获取FileProvider path
-     * author zx
-     * version 1.0
-     * since 2018/5/4  .
-     */
-    public static String getFPUriToPath(Context context, Uri uri) {
-        try {
-            List<PackageInfo> packs = context.getPackageManager().getInstalledPackages(PackageManager.GET_PROVIDERS);
-            if (packs != null) {
-                String fileProviderClassName = FileProvider.class.getName();
-                for (PackageInfo pack : packs) {
-                    ProviderInfo[] providers = pack.providers;
-                    if (providers != null) {
-                        for (ProviderInfo provider : providers) {
-                            if (uri.getAuthority().equals(provider.authority)) {
-                                if (provider.name.equalsIgnoreCase(fileProviderClassName)) {
-                                    Class<FileProvider> fileProviderClass = FileProvider.class;
-                                    try {
-                                        Method getPathStrategy = fileProviderClass.getDeclaredMethod("getPathStrategy", Context.class, String.class);
-                                        getPathStrategy.setAccessible(true);
-                                        Object invoke = getPathStrategy.invoke(null, context, uri.getAuthority());
-                                        if (invoke != null) {
-                                            String PathStrategyStringClass = FileProvider.class.getName() + "$PathStrategy";
-                                            Class<?> PathStrategy = Class.forName(PathStrategyStringClass);
-                                            Method getFileForUri = PathStrategy.getDeclaredMethod("getFileForUri", Uri.class);
-                                            getFileForUri.setAccessible(true);
-                                            Object invoke1 = getFileForUri.invoke(invoke, uri);
-                                            if (invoke1 instanceof File) {
-                                                String filePath = ((File) invoke1).getAbsolutePath();
-                                                return filePath;
-                                            }
-                                        }
-                                    } catch (NoSuchMethodException e) {
-                                        e.printStackTrace();
-                                    } catch (InvocationTargetException e) {
-                                        e.printStackTrace();
-                                    } catch (IllegalAccessException e) {
-                                        e.printStackTrace();
-                                    } catch (ClassNotFoundException e) {
-                                        e.printStackTrace();
-                                    }
-                                    break;
-                                }
-                                break;
-                            }
-                        }
-                    }
+    public static Intent getAlarmClockIntent(Context context) {
+        Intent intent = null;
+        String activityName = "";
+        String packageName = "";
+        String alarmPackageName = "";
+        List<PackageInfo> allPackageInfos = context.getPackageManager().getInstalledPackages(PackageManager.GET_ACTIVITIES); // 取得系统安装所有软件信息
+        List<PackageInfo> sysPackageInfos = new ArrayList<>();
+        if (!allPackageInfos.isEmpty()) {
+            for (PackageInfo packageInfo : allPackageInfos) {
+                ApplicationInfo appInfo = packageInfo.applicationInfo;// 得到每个软件信息
+                if ((appInfo.flags & ApplicationInfo.FLAG_SYSTEM) != 0) {
+                    sysPackageInfos.add(packageInfo);// 系统软件
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-        return null;
+        for (int i = 0; i < sysPackageInfos.size(); i++) {
+            PackageInfo packageInfo = sysPackageInfos.get(i);
+            packageName = packageInfo.packageName;
+
+            if (packageName.contains("clock") && !packageName.contains("widget")) {
+                ActivityInfo activityInfo = packageInfo.activities[0];
+                if (activityInfo.name.contains("Alarm") || activityInfo.name.contains("DeskClock")) {
+                    activityName = activityInfo.name;
+                    alarmPackageName = packageName;
+                }
+            }
+        }
+        if ((activityName != "") && (alarmPackageName != ""))
+        {
+            intent= new Intent();
+            Log.d(LitePalBase.TAG, "包信息"+alarmPackageName+","+activityName);
+            intent.setComponent(new ComponentName(alarmPackageName, activityName));
+            //startActivity(intent);
+            return intent;
+        }
+        else
+        {
+            return intent;
+        }
+    }
+
+    public static void updateWidgetForActivity(Context context)
+    {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("cityselect", MODE_PRIVATE);
+        String cityName = sharedPreferences.getString("cityname", "null");
+        SharedPreferences.Editor editor = context.getSharedPreferences("widgetCity", MODE_PRIVATE).edit();
+        editor.putString("nowCity", cityName);
+        editor.apply();
+        AppWidgetManager appWidgetManager=AppWidgetManager.getInstance(context);
+        int[] ids=appWidgetManager.getAppWidgetIds(new ComponentName(context,myWidget.class));
+        for(int id : ids)
+        {
+            myWidget.updateAppWidget(context, appWidgetManager,id);
+        }
     }
 
 

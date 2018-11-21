@@ -11,12 +11,16 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
@@ -206,10 +210,6 @@ public class MainActivity extends BaseActivity {
         }
     };
 
-//    public static boolean isStart = false;//用于判读下载服务是否启动,设置数值在downloadservice的startDownload方法下。
-//    public static boolean isPause = false;//用于判断下载服务是否暂停，设置数值在downloadservice的pauseDownload方法下。
-//    public static boolean isCancel = false;//用于判断下载服务是否停止，设置数值在downloadservice的cancelDownload方法下。
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -258,7 +258,7 @@ public class MainActivity extends BaseActivity {
         viewPager.setAdapter(weatherPagerAdapter);
         Log.d(TAG, "索引" + getCityNameIndex());
         viewPager.setCurrentItem(getCityNameIndex());
-        viewPager.setOffscreenPageLimit(0);
+        viewPager.setOffscreenPageLimit(1);
         viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
             public void onPageScrolled(int i, float v, int i1) {
@@ -277,6 +277,12 @@ public class MainActivity extends BaseActivity {
                 SharedPreferences.Editor editor = getSharedPreferences("cityselect", MODE_PRIVATE).edit();
                 editor.putString("cityname", cityListTableList.get(i).getCityName());
                 editor.apply();
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                      SystemTool.updateWidgetForActivity(MainActivity.this);
+                    }
+                }).start();
 
 
                 weatherUpdateTableList = LitePal.where("cityName=?", cityListTableList.get(i).getCityName()).find(WeatherUpdateTable.class);
@@ -446,9 +452,7 @@ public class MainActivity extends BaseActivity {
 
         Toast.makeText(this, cityname, Toast.LENGTH_SHORT).show();
 
-
     }
-
 
     String fileName;
     public MyHandler myHandler = new MyHandler(this);
@@ -540,11 +544,6 @@ public class MainActivity extends BaseActivity {
                 break;
 
             case R.id.share:
-                SharedPreferences.Editor editor = getSharedPreferences("color", MODE_PRIVATE).edit();
-                editor.putBoolean("change", true);
-                editor.apply();
-
-
                 //Toast.makeText(this,"点击了分享选项",Toast.LENGTH_SHORT).show();
                 break;
 
@@ -700,5 +699,8 @@ public class MainActivity extends BaseActivity {
 
         super.onDestroy();
     }
+
+
+
 
 }

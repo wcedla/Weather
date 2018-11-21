@@ -20,6 +20,7 @@
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+
     <application
         android:name="org.litepal.LitePalApplication"
         android:allowBackup="true"
@@ -81,7 +82,18 @@
             android:enabled="true"
             android:exported="true" />
 
-        <activity android:name=".AboutMe"></activity>
+        <activity android:name=".AboutMe" />
+
+        <receiver android:name=".myWidget">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.wcedla.widget.clock.CITY"/>
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/my_widget_info" />
+        </receiver>
     </application>
 
 </manifest>

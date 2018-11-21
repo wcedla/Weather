@@ -2,6 +2,7 @@ package com.wcedla.wcedlaweather;
 
 import android.Manifest;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.support.v4.app.ActivityCompat;
@@ -87,6 +88,8 @@ public class CitySelectActivity extends BaseActivity {
 
 
     }
+
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {

@@ -194,6 +194,13 @@
                         android:layout_marginStart="55dp"
                         android:text="· github开源库-Litepal"
                         />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginStart="55dp"
+                        android:text="· 数据来源-和风天气"
+                        />
 
                 </LinearLayout>
 
